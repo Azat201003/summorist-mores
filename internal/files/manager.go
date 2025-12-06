@@ -3,12 +3,13 @@ package files
 import (
 	"os"
 	"io"
+	"fmt"
 	"github.com/Azat201003/summorist-mores/internal/config"
 )
 
 func ReadFile(moreId uint32, offset uint32, buffer []byte) (int, error) {
 	conf := config.GetConfig()
-	filePath := conf.FilePrefix + string(moreId) + conf.FilePostfix
+	filePath := conf.FilePrefix + fmt.Sprintf("%d", moreId)  + conf.FilePostfix
 	file, err := os.Open(filePath)
 	if err != nil {
 		return 0, err
@@ -25,7 +26,7 @@ func ReadFile(moreId uint32, offset uint32, buffer []byte) (int, error) {
 
 func WriteFile(moreId uint32, buffer []byte) error {
 	conf := config.GetConfig()
-	filePath := conf.FilePrefix + string(moreId) + conf.FilePostfix
+	filePath := conf.FilePrefix + fmt.Sprintf("%d", moreId)  + conf.FilePostfix
 	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
