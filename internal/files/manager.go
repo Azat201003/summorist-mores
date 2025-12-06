@@ -7,7 +7,7 @@ import (
 	"github.com/Azat201003/summorist-mores/internal/config"
 )
 
-func ReadFile(moreId uint32, offset uint32, buffer []byte) (int, error) {
+func ReadFile(moreId uint32, offset uint32, buffer []byte) (uint32, error) {
 	conf := config.GetConfig()
 	filePath := conf.FilePrefix + fmt.Sprintf("%d", moreId)  + conf.FilePostfix
 	file, err := os.Open(filePath)
@@ -18,10 +18,10 @@ func ReadFile(moreId uint32, offset uint32, buffer []byte) (int, error) {
 
 	n, err := file.ReadAt(buffer, int64(offset))
 	if err != nil && err != io.EOF {
-		return n, err
+		return uint32(n), err
 	}
 
-	return n, nil
+	return uint32(n), nil
 }
 
 func WriteFile(moreId uint32, buffer []byte) error {
