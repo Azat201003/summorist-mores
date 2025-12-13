@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS metas (
-    id SERIAL PRIMARY KEY,
+    more_id SERIAL PRIMARY KEY,
     title TEXT,
     creator_id INTEGER
 );

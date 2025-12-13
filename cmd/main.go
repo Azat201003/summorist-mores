@@ -1,11 +1,16 @@
 package main
 
 import (
-	"fmt"
+	"github.com/Azat201003/summorist-mores/internal/config"
 )
 
 func main() {
-	fmt.Println("Hello, world!");
-	for {}
+	conf := config.GetConfig()
+	if !conf.ConfigIncluded {
+		panic("Config's not included.")
+	}
+	if !conf.SecretsIncluded {
+		panic("Secrets' not included.")
+	}
 }
 
