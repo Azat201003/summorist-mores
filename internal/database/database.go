@@ -1,11 +1,10 @@
 package database
 
 import (
-	"fmt"
-	"github.com/Azat201003/summorist-mores/internal/config"
 	pb "github.com/Azat201003/summorist-shared/gen/go/mores"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"os"
 )
 
 type DatabaseClient struct {
@@ -13,16 +12,7 @@ type DatabaseClient struct {
 }
 
 func (dbc *DatabaseClient) Init() {
-	conf := config.GetConfig()
-	dsn := fmt.Sprintf(
-		"host=%v user=%v password=%v dbname=%v port=%v sslmode=disable TimeZone=Asia/Shanghai",
-		conf.DBHost,
-		conf.DBUser,
-		conf.DBPassword,
-		conf.DBName,
-		conf.DBPort,
-	)
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(os.Getenv("MORES_POSTGRES_DSN")), &gorm.Config{})
 	if err != nil {
 		panic(err) // or handle error
 	}

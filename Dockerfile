@@ -6,11 +6,7 @@ COPY go.mod go.sum ./
 
 RUN go mod download
 
-
-COPY cmd ./cmd
-COPY tests ./tests
-
-RUN ls -a
+COPY . ./
 
 CMD go run ./cmd
 
