@@ -1,26 +1,29 @@
 package server
 
 import (
+	"fmt"
+	"log"
+	"net"
+	"os"
+
+	"github.com/Azat201003/summorist-mores/internal/database"
 	pb "github.com/Azat201003/summorist-shared/gen/go/mores"
 	users "github.com/Azat201003/summorist-shared/gen/go/users"
 	"google.golang.org/grpc"
-	"net"
-	"log"
-	"os"
-	"fmt"
 )
 
-type moreServer struct {
+type MoreServer struct {
 	pb.UnimplementedMoresServer
-	usersClient *users.UsersClient
+	UsersClient *users.UsersClient
+	DBC *database.DatabaseClient
 }
 
-func (s *moreServer) UploadMore(stream grpc.ClientStreamingServer[pb.UploadRequest, pb.Meta]) error {
+func (s *MoreServer) UploadMore(stream grpc.ClientStreamingServer[pb.UploadRequest, pb.Meta]) error {
 		return nil
 }
 
-func newServer() *moreServer {
-	server := new(moreServer)
+func newServer() *MoreServer {
+	server := new(MoreServer)
 	return server
 }
 

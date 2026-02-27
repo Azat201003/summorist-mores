@@ -22,7 +22,7 @@ func TestWriteReadOk(t *testing.T) {
 		assert.NoError(t, err, "Some error, while appending part of file")
 	}
 
-	data, err := os.ReadFile(os.Getenv("FILE_PREFIX") + fmt.Sprintf("%d", moreId) + os.Getenv("FILE_POSTFIX"))
+	data, err := os.ReadFile(os.Getenv("MORES_FILE_PREFIX") + fmt.Sprintf("%d", moreId) + os.Getenv("MORES_FILE_SUFFIX"))
 	assert.NoError(t, err, "Cannot read file")
 	assert.Equal(t, str, data, "File contains wrong data")
 

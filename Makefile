@@ -1,9 +1,10 @@
-all: run
+all: test
 
-ENVFILE=config.develop.env
+MORES_FILE_PREFIX=../../storage/
+MORES_FILE_SUFFIX=.txt
 
-include $(ENVFILE)
-export $(shell sed '/^#/d; s/=.*//' $(ENVFILE))
+export MORES_FILE_PREFIX MORES_FILE_SUFFIX
+
 test:
 	@go test ./tests/... -v
 
