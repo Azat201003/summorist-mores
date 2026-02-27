@@ -69,6 +69,10 @@ func (s *serverSuite) SetupSuite() {
 
 	client := pb.NewMoresClient(conn)
 	s.usersClient = &client
+
+	// TODO add user service mock
+
+
 	fmt.Println("5. All was set up")
 }
 

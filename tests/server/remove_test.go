@@ -1,4 +1,6 @@
 package server_tests
 
-func TestRemoveOk
+func TestRemoveOk() {
+	// TODO make test function with suite
+}
 
