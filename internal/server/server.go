@@ -14,7 +14,7 @@ import (
 
 type MoreServer struct {
 	pb.UnimplementedMoresServer
-	UsersClient *users.UsersClient
+	UsersClient users.UsersClient
 	DBC *database.DatabaseClient
 }
 

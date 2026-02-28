@@ -3,13 +3,14 @@ package server_tests
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"net"
 	"os"
 	"testing"
 
-
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -18,8 +19,8 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-
 	pb "github.com/Azat201003/summorist-shared/gen/go/mores"
+	users_mock "github.com/Azat201003/summorist-shared/gen/go/users/mock"
 
 	"github.com/Azat201003/summorist-mores/internal/database"
 	"github.com/Azat201003/summorist-mores/internal/server"
@@ -27,23 +28,25 @@ import (
 
 type serverSuite struct {
 	suite.Suite
-	usersClient *pb.MoresClient
+	moresClient *pb.MoresClient
+	usersClientMock *users_mock.MockUsersClient
 	dbc         *database.DatabaseClient
 	dbmock      sqlmock.Sqlmock
 	lis 				net.Listener
 	db 					*sql.DB
+	gomockCtrl *gomock.Controller
 }
 
 func (s *serverSuite) SetupSuite() {
 	// Mock database
-	fmt.Println("1. Mock db setting up")
+	log.Println("1. Mock db setting up")
 	db, mock, err := sqlmock.New()
 	s.db = db
 	s.NoError(err)
 	s.dbmock = mock
 
 	// Database
-	fmt.Println("2. Database setting up")
+	log.Println("2. Database setting up")
 	dialector := postgres.New(postgres.Config{
 		Conn: db,
 		DriverName: "postgres",
@@ -54,31 +57,35 @@ func (s *serverSuite) SetupSuite() {
 	s.NoError(err)
 	s.dbc = &database.DatabaseClient{DB: gormdb}
 	
-	// Service server
-	fmt.Println("3. Service server setting up")
-	s.lis, _ = net.Listen("tcp", fmt.Sprintf("%v:%v", "0.0.0.0", os.Getenv("USERS_PORT")))
+	// User service mock
+	ctrl := gomock.NewController(s.T())
+	s.gomockCtrl = ctrl
+	s.usersClientMock = users_mock.NewMockUsersClient(ctrl)
+
+	// This service server
+	log.Println("3. Service server setting up")
+	s.lis, _ = net.Listen("tcp", fmt.Sprintf("%v:%v", "0.0.0.0", os.Getenv("MORES_PORT")))
 	grpcServer := grpc.NewServer()
-	pb.RegisterMoresServer(grpcServer, &server.MoreServer{DBC: s.dbc})
+	pb.RegisterMoresServer(grpcServer, &server.MoreServer{DBC: s.dbc, UsersClient: s.usersClientMock})
 	go grpcServer.Serve(s.lis)
 	
-	// Service client
-	fmt.Println("4. Service client setting up")
+	// This service client
+	log.Println("4. Service client setting up")
 	conn, err := grpc.NewClient(fmt.Sprintf("%v:%v", "0.0.0.0", os.Getenv("USERS_PORT")), grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	s.NoError(err)
 
 	client := pb.NewMoresClient(conn)
-	s.usersClient = &client
+	s.moresClient = &client
 
-	// TODO add user service mock
-
-
-	fmt.Println("5. All was set up")
+	// End
+	log.Println("5. All was set up")
 }
 
 func (s *serverSuite) TearDownSuite() {
 	s.lis.Close()
 	s.db.Close()
+	s.gomockCtrl.Finish()
 }
 
 func TestServer(t *testing.T) {
