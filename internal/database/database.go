@@ -1,10 +1,12 @@
 package database
 
 import (
+	"os"
+
 	pb "github.com/Azat201003/summorist-shared/gen/go/mores"
+	"github.com/DATA-DOG/go-sqlmock"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"os"
 )
 
 type DatabaseClient struct {
@@ -17,6 +19,17 @@ func (dbc *DatabaseClient) Init() {
 		panic(err) // or handle error
 	}
 	dbc.DB = db
+}
+
+func (dbc *DatabaseClient) GetMock() (mock sqlmock.Sqlmock, err error) { // Instead of Init()
+	sqlDB, mock, err := sqlmock.New()
+	if err != nil {
+		return
+	}
+	dbc.DB, err = gorm.Open(postgres.New(postgres.Config{
+		Conn: sqlDB,
+	}), &gorm.Config{})
+	return
 }
 
 func (dbc *DatabaseClient) RecieveFiltered(filter *pb.Meta) (*[]pb.Meta, error) {

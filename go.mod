@@ -3,8 +3,9 @@ module github.com/Azat201003/summorist-mores
 go 1.25.0
 
 require (
-	github.com/Azat201003/summorist-shared v1.1.5
+	github.com/Azat201003/summorist-shared v1.4.0
 	github.com/DATA-DOG/go-sqlmock v1.5.2
+	github.com/golang/mock v1.6.0
 	github.com/stretchr/testify v1.11.1
 	google.golang.org/grpc v1.75.0
 	gorm.io/driver/postgres v1.5.0
@@ -20,6 +21,7 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/srikrsna/protoc-gen-gotag v1.0.2 // indirect
+	go.uber.org/mock v0.6.0 // indirect
 	golang.org/x/crypto v0.39.0 // indirect
 	golang.org/x/net v0.41.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
