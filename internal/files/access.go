@@ -1,14 +1,17 @@
 package files
 
 import (
-	"os"
-	"io"
 	"fmt"
+	"io"
+	"os"
 )
 
+func getFilePath(moreId uint32) string {
+	return os.Getenv("MORES_FILE_PREFIX") + fmt.Sprintf("%d", moreId) + os.Getenv("MORES_FILE_SUFFIX")
+}
+
 func ReadFile(moreId uint32, offset uint32, buffer []byte) (uint32, error) {
-	filePath := os.Getenv("MORES_FILE_PREFIX") + fmt.Sprintf("%d", moreId)  + os.Getenv("MORES_FILE_SUFFIX")
-	file, err := os.Open(filePath)
+	file, err := os.Open(getFilePath(moreId))
 	if err != nil {
 		return 0, err
 	}
@@ -23,8 +26,7 @@ func ReadFile(moreId uint32, offset uint32, buffer []byte) (uint32, error) {
 }
 
 func WriteFile(moreId uint32, buffer []byte) error {
-	filePath := os.Getenv("MORES_FILE_PREFIX") + fmt.Sprintf("%d", moreId)  + os.Getenv("MORES_FILE_SUFFIX")
-	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(getFilePath(moreId), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
@@ -34,3 +36,11 @@ func WriteFile(moreId uint32, buffer []byte) error {
 	return err
 }
 
+func ClearFile(moreId uint32) error {
+	file, err := os.OpenFile(getFilePath(moreId), os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	return nil
+}

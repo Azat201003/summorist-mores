@@ -1,40 +1,56 @@
 package database
 
 import (
+	"database/sql"
+	"log"
 	"os"
+	"time"
 
 	pb "github.com/Azat201003/summorist-shared/gen/go/mores"
 	"github.com/DATA-DOG/go-sqlmock"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type DatabaseClient struct {
 	DB *gorm.DB
 }
 
-func (dbc *DatabaseClient) Init() {
+func (dbc *DatabaseClient) Init() error {
 	db, err := gorm.Open(postgres.Open(os.Getenv("MORES_POSTGRES_DSN")), &gorm.Config{})
 	if err != nil {
-		panic(err) // or handle error
+		return err
 	}
 	dbc.DB = db
+	return nil
 }
 
-func (dbc *DatabaseClient) GetMock() (mock sqlmock.Sqlmock, err error) { // Instead of Init()
-	sqlDB, mock, err := sqlmock.New()
+func (dbc *DatabaseClient) GetMock() (sqlDB *sql.DB, mock sqlmock.Sqlmock, err error) { // Instead of Init()
+	sqlDB, mock, err = sqlmock.New()
 	if err != nil {
 		return
 	}
 	dbc.DB, err = gorm.Open(postgres.New(postgres.Config{
 		Conn: sqlDB,
-	}), &gorm.Config{})
+	}), &gorm.Config{
+		Logger: logger.New(
+			log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+			logger.Config{
+				SlowThreshold:             time.Second, // Slow SQL threshold
+				LogLevel:                  logger.Info, // Log level
+				IgnoreRecordNotFoundError: true,        // Ignore ErrRecordNotFound error for logger
+				ParameterizedQueries:      true,        // Don't include params in the SQL log
+				Colorful:                  false,       // Disable color
+			},
+		),
+	})
 	return
 }
 
-func (dbc *DatabaseClient) RecieveFiltered(filter *pb.Meta) (*[]pb.Meta, error) {
-	metas := new([]pb.Meta)
-	result := dbc.DB.Find(metas, filter)
+func (dbc *DatabaseClient) RecieveFiltered(filter *pb.Meta) ([]pb.Meta, error) {
+	metas := []pb.Meta{}
+	result := dbc.DB.Find(&metas, filter)
 	return metas, result.Error
 }
 

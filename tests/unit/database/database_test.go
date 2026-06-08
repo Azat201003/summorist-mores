@@ -1,7 +1,6 @@
 package database_test
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -26,8 +25,7 @@ func setupMockDB(t *testing.T) (*database.DatabaseClient, sqlmock.Sqlmock) {
 	assert.NoError(t, err)
 
 	dbc := &database.DatabaseClient{}
-	field := reflect.ValueOf(dbc).Elem().FieldByName("DB")
-	field.Set(reflect.ValueOf(gdb))
+	dbc.DB = gdb
 
 	return dbc, mock
 }
@@ -42,8 +40,8 @@ func TestRecieveFiltered(t *testing.T) {
 
 	metas, err := dbc.RecieveFiltered(filter)
 	assert.NoError(t, err)
-	assert.Len(t, *metas, 1)
-	assert.Equal(t, uint64(1), (*metas)[0].MoreId)
+	assert.Len(t, metas, 1)
+	assert.Equal(t, uint64(1), metas[0].MoreId)
 
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

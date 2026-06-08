@@ -3,6 +3,8 @@ package grpc
 import (
 	"context"
 	"io"
+	"os"
+	"regexp"
 	"testing"
 
 	"github.com/Azat201003/summorist-mores/internal/database"
@@ -14,12 +16,19 @@ import (
 )
 
 func TestGetFilteredOk(t *testing.T) {
-	// Preparing
-	dbc := new(database.DatabaseClient)
-	mock, err := dbc.GetMock()
-	assert.NoError(t, err)
+	t.Parallel()
 
-	ms := server.NewServer()
+	// Preparing
+	os.Setenv("MORES_HOST", "127.0.0.1")
+	os.Setenv("MORES_PORT", "8001")
+
+	dbc := new(database.DatabaseClient)
+	sqlDB, mock, err := dbc.GetMock()
+	assert.NoError(t, err)
+	defer sqlDB.Close()
+
+	ms, err := server.NewServer()
+	assert.NoError(t, err)
 	ms.DMC = dbc
 	ctx, cancel := context.WithCancel(t.Context())
 	go ms.Start(ctx)
@@ -32,19 +41,21 @@ func TestGetFilteredOk(t *testing.T) {
 	client := pb.NewMoresClient(conn)
 
 	// Do
-	mock.ExpectQuery("*").WillReturnRows(sqlmock.NewRows([]string{"1", "title", "2"}))
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "meta"`)).WillReturnRows(sqlmock.NewRows([]string{"more_id", "creator_id", "title"}).AddRow(1, 2, "title"))
 	ans, err := client.GetFiltered(t.Context(), &pb.Meta{})
 
 	// Check
 	assert.NoError(t, err)
-	assert.NoError(t, mock.ExpectationsWereMet())
 
 	meta, err := ans.Recv()
 	assert.NoError(t, err)
-	assert.Equal(t, meta.GetCreatorId(), uint64(2))
-	assert.Equal(t, meta.GetMoreId(), uint64(1))
-	assert.Equal(t, meta.GetTitle(), "title")
+
+	assert.Equal(t, uint64(2), meta.GetCreatorId())
+	assert.Equal(t, uint64(1), meta.GetMoreId())
+	assert.Equal(t, "title", meta.GetTitle())
+
+	assert.NoError(t, mock.ExpectationsWereMet())
 
 	meta, err = ans.Recv()
-	assert.ErrorIs(t, err, io.EOF)
+	assert.ErrorIs(t, io.EOF, err)
 }
