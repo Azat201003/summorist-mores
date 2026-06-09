@@ -57,7 +57,7 @@ func (s *moreServer) DownloadMore(request *pb.DownloadRequest, stream grpc.Serve
 		if err != nil {
 			return err
 		}
-		var a []byte = make([]byte, n)
+		a := make([]byte, n)
 		copy(a, buffer)
 		stream.Send(&pb.Part{Size: n, Data: a, Number: i})
 
@@ -67,6 +67,26 @@ func (s *moreServer) DownloadMore(request *pb.DownloadRequest, stream grpc.Serve
 		i++
 		offset += n
 	}
+}
+
+func (s *moreServer) CreateMore(ctx context.Context, request *pb.CreateRequest) (*pb.Meta, error) {
+	response, err := s.UsersClient.Authorize(context.Background(), &users.AuthRequest{JwtToken: request.JwtToken})
+	if err != nil {
+		return nil, ErrNotAuthorized
+	}
+	id, err := s.DMC.CreateMore(&pb.Meta{CreatorId: response.UserId, Title: request.Title})
+	if err != nil {
+		return nil, err
+	}
+	mores, err := s.DMC.RecieveFiltered(&pb.Meta{MoreId: id})
+	if mores == nil {
+		return nil, ErrSomethingWentWrong
+	}
+	if err != nil {
+		return nil, err
+	}
+	more := mores[0]
+	return more, err
 }
 
 func (s *moreServer) UploadMore(stream grpc.ClientStreamingServer[pb.UploadRequest, pb.Meta]) error {

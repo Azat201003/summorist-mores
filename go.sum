@@ -1,5 +1,5 @@
-github.com/Azat201003/summorist-shared v1.5.2 h1:qaFESirHYyF+kTnkCUG3gasVco52aznlyDEYPv1nvKU=
-github.com/Azat201003/summorist-shared v1.5.2/go.mod h1:ErBIqNsDkiijhY6oP5jcdRbT9kzER4wN/E8jRRW5mns=
+github.com/Azat201003/summorist-shared v1.5.4 h1:jinz9bmAci7oulR7Di/ZK2zc7AwKOOGWPoUnFjvQE6Q=
+github.com/Azat201003/summorist-shared v1.5.4/go.mod h1:ErBIqNsDkiijhY6oP5jcdRbT9kzER4wN/E8jRRW5mns=
 github.com/DATA-DOG/go-sqlmock v1.5.2 h1:OcvFkGmslmlZibjAjaHm3L//6LiuBgolP7OputlJIzU=
 github.com/DATA-DOG/go-sqlmock v1.5.2/go.mod h1:88MAG/4G7SMwSE3CeA0ZKzrT5CiOU3OJ+JlNzwDqpNU=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=

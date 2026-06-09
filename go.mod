@@ -3,7 +3,7 @@ module github.com/Azat201003/summorist-mores
 go 1.25.0
 
 require (
-	github.com/Azat201003/summorist-shared v1.5.2
+	github.com/Azat201003/summorist-shared v1.5.4
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/mock v0.6.0
