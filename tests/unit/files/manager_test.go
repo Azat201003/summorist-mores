@@ -2,13 +2,12 @@ package files_test
 
 import (
 	"fmt"
+	"os"
+	"testing"
 
 	"github.com/Azat201003/summorist-mores/internal/files"
 	"github.com/stretchr/testify/assert"
-
 	// "math/rand/v2"
-	"os"
-	"testing"
 )
 
 func TestWriteReadOk(t *testing.T) {
@@ -20,7 +19,7 @@ func TestWriteReadOk(t *testing.T) {
 	size := uint32(4) // bytes per send
 	ln := uint32(len(str))
 	count := (ln + size - 1) / size
-	moreId := uint32(1)
+	moreId := uint64(1)
 
 	assert.NoError(t, files.ClearFile(moreId))
 

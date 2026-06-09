@@ -2,7 +2,6 @@ package grpc
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"log"
 	"os"
@@ -10,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/Azat201003/summorist-mores/internal/database"
+	"github.com/Azat201003/summorist-mores/internal/files"
 	"github.com/Azat201003/summorist-mores/internal/server"
 	"github.com/Azat201003/summorist-mores/lib/client"
 	pb "github.com/Azat201003/summorist-shared/gen/go/mores"
@@ -25,7 +25,7 @@ func TestUpload(t *testing.T) {
 
 	// Preparing
 	os.Setenv("MORES_HOST", "127.0.0.1")
-	os.Setenv("MORES_PORT", "8002")
+	os.Setenv("MORES_PORT", "8003")
 	os.Setenv("MORES_FILE_PREFIX", "../testdata/grpc_")
 	os.Setenv("MORES_FILE_SUFFIX", ".txt")
 
@@ -50,29 +50,38 @@ func TestUpload(t *testing.T) {
 	client := pb.NewMoresClient(conn)
 
 	jwt := "some jwt"
-	moreId := uint64(1)
+	moreId := uint64(2)
 	userId := uint64(1)
+	blockSize := uint32(5)
+
+	files.RemoveFile(moreId)
 
 	// Do
-	usersMock.EXPECT().Authorize(t.Context(), &users.AuthRequest{JwtToken: jwt}).Return(userId, int32(0))
+	usersMock.EXPECT().Authorize(context.Background(), &users.AuthRequest{JwtToken: jwt}).Return(&users.AuthResponse{UserId: userId, Code: int32(0)}, nil)
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "meta"`)).WillReturnRows(sqlmock.NewRows([]string{"more_id", "creator_id", "title"}).AddRow(moreId, userId, "title"))
-	stream, err := client.DownloadMore(t.Context(), &pb.DownloadRequest{Data: &pb.ExchangeData{MoreId: moreId, JwtToken: jwt, BlockSize: 8}})
+	stream, err := client.UploadMore(t.Context())
+	err = stream.Send(&pb.UploadRequest{Request: &pb.UploadRequest_Data{Data: &pb.ExchangeData{JwtToken: jwt, MoreId: moreId, BlockSize: blockSize}}})
 	assert.NoError(t, err)
 
-	result := []byte{}
+	data := []byte("This is super mega ultra text, that is super ultra mega, also it's text")
+	offset := uint32(0)
 
 	for {
-		part, err := stream.Recv()
-		if err == io.EOF {
+		err = stream.Send(&pb.UploadRequest{Request: &pb.UploadRequest_Part{&pb.Part{Data: data[offset:min(offset+blockSize, uint32(len(data)))]}}})
+		offset += blockSize
+		if offset >= uint32(len(data)) {
+			stream.CloseSend()
+			err = stream.RecvMsg(0)
+			if err == io.EOF {
+				break
+			}
+			assert.NoError(t, err)
 			break
 		}
-		assert.NoError(t, err)
-		result = append(result, part.Data...)
 	}
 
-	log.Println(string(result))
-
 	// Check
-	content, err := os.ReadFile(os.Getenv("MORES_FILE_PREFIX") + fmt.Sprint(moreId) + os.Getenv("MORES_FILE_SUFFIX"))
-	assert.Equal(t, content, result)
+	content, err := os.ReadFile(files.GetFilePath(moreId))
+	log.Println(string(content))
+	assert.Equal(t, data, content)
 }

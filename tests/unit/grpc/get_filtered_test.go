@@ -16,8 +16,6 @@ import (
 )
 
 func TestGetFilteredOk(t *testing.T) {
-	t.Parallel()
-
 	// Preparing
 	os.Setenv("MORES_HOST", "127.0.0.1")
 	os.Setenv("MORES_PORT", "8001")

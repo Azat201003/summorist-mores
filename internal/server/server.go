@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -31,7 +32,7 @@ func (s *moreServer) GetFiltered(request *pb.Meta, stream grpc.ServerStreamingSe
 	log.Println(metas)
 
 	for i := range metas {
-		if err = stream.Send(&metas[i]); err != nil {
+		if err = stream.Send(metas[i]); err != nil {
 			return err
 		}
 	}
@@ -52,7 +53,7 @@ func (s *moreServer) DownloadMore(request *pb.DownloadRequest, stream grpc.Serve
 
 	var i uint32 = 0
 	for {
-		n, err := files.ReadFile(uint32(request.Data.MoreId), offset, buffer)
+		n, err := files.ReadFile(request.Data.MoreId, offset, buffer)
 		if err != nil {
 			return err
 		}
@@ -88,6 +89,27 @@ func (s *moreServer) UploadMore(stream grpc.ClientStreamingServer[pb.UploadReque
 	if metas == nil {
 		return ErrNotFound
 	}
+	meta := metas[0]
+	if meta.CreatorId != response.UserId {
+		return ErrNotPermitted
+	}
+
+	for {
+		request, err = stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		part := request.GetPart()
+		if part == nil {
+			return ErrNoContent
+		}
+
+		files.WriteFile(meta.MoreId, part.Data)
+	}
+
 	return nil
 }
 
