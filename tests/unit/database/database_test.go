@@ -36,7 +36,7 @@ func TestRecieveFiltered(t *testing.T) {
 
 	filter := &pb.Meta{MoreId: 1}
 	rows := sqlmock.NewRows([]string{"more_id"}).AddRow(1)
-	mock.ExpectQuery(`SELECT \* FROM "meta" WHERE "meta"\."more_id" = \$1`).WillReturnRows(rows)
+	mock.ExpectQuery(`SELECT \* FROM "metas" WHERE "metas"\."more_id" = \$1`).WillReturnRows(rows)
 
 	metas, err := dbc.RecieveFiltered(filter)
 	assert.NoError(t, err)
@@ -51,7 +51,7 @@ func TestDeleteMore(t *testing.T) {
 	defer mock.ExpectClose()
 
 	mock.ExpectBegin()
-	mock.ExpectExec(`DELETE FROM "meta" WHERE id = \$1`).WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectExec(`DELETE FROM "metas" WHERE id = \$1`).WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 
 	err := dbc.DeleteMore(1)
@@ -66,7 +66,7 @@ func TestCreateMore(t *testing.T) {
 
 	more := &pb.Meta{MoreId: 1}
 	mock.ExpectBegin()
-	mock.ExpectExec(`INSERT INTO "meta"`).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(`INSERT INTO "metas"`).WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
 	id, err := dbc.CreateMore(more)
@@ -82,7 +82,7 @@ func TestUpdateMore(t *testing.T) {
 
 	more := &pb.Meta{MoreId: 1}
 	mock.ExpectBegin()
-	mock.ExpectExec(`UPDATE "meta" SET "more_id"=\$1 WHERE more_id = \$2`).WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectExec(`UPDATE "metas" SET "more_id"=\$1 WHERE more_id = \$2`).WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 
 	err := dbc.UpdateMore(more)

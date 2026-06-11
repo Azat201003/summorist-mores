@@ -25,7 +25,7 @@ func TestUpload(t *testing.T) {
 
 	// Preparing
 	os.Setenv("MORES_HOST", "127.0.0.1")
-	os.Setenv("MORES_PORT", "8003")
+	os.Setenv("MORES_PORT", "8004")
 	os.Setenv("MORES_FILE_PREFIX", "../testdata/grpc_")
 	os.Setenv("MORES_FILE_SUFFIX", ".txt")
 
@@ -58,7 +58,7 @@ func TestUpload(t *testing.T) {
 
 	// Do
 	usersMock.EXPECT().Authorize(context.Background(), &users.AuthRequest{JwtToken: jwt}).Return(&users.AuthResponse{UserId: userId, Code: int32(0)}, nil)
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "meta"`)).WillReturnRows(sqlmock.NewRows([]string{"more_id", "creator_id", "title"}).AddRow(moreId, userId, "title"))
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "metas"`)).WillReturnRows(sqlmock.NewRows([]string{"more_id", "creator_id", "title"}).AddRow(moreId, userId, "title"))
 	stream, err := client.UploadMore(t.Context())
 	err = stream.Send(&pb.UploadRequest{Request: &pb.UploadRequest_Data{Data: &pb.ExchangeData{JwtToken: jwt, MoreId: moreId, BlockSize: blockSize}}})
 	assert.NoError(t, err)

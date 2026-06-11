@@ -39,7 +39,7 @@ func TestGetFilteredOk(t *testing.T) {
 	client := pb.NewMoresClient(conn)
 
 	// Do
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "meta"`)).WillReturnRows(sqlmock.NewRows([]string{"more_id", "creator_id", "title"}).AddRow(1, 2, "title"))
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "metas"`)).WillReturnRows(sqlmock.NewRows([]string{"more_id", "creator_id", "title"}).AddRow(1, 2, "title"))
 	ans, err := client.GetFiltered(t.Context(), &pb.Meta{})
 
 	// Check

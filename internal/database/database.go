@@ -50,21 +50,21 @@ func (dbc *DatabaseClient) GetMock() (sqlDB *sql.DB, mock sqlmock.Sqlmock, err e
 
 func (dbc *DatabaseClient) RecieveFiltered(filter *pb.Meta) ([]*pb.Meta, error) {
 	metas := []*pb.Meta{}
-	result := dbc.DB.Find(&metas, filter)
+	result := dbc.DB.Table("metas").Find(&metas, filter)
 	return metas, result.Error
 }
 
 func (dbc *DatabaseClient) DeleteMore(id uint64) error {
-	result := dbc.DB.Where("id = ?", id).Delete(&pb.Meta{})
+	result := dbc.DB.Table("metas").Where("id = ?", id).Delete(&pb.Meta{})
 	return result.Error
 }
 
 func (dbc *DatabaseClient) CreateMore(more *pb.Meta) (uint64, error) {
-	result := dbc.DB.Create(more)
+	result := dbc.DB.Table("metas").Create(more)
 	return more.MoreId, result.Error
 }
 
 func (dbc *DatabaseClient) UpdateMore(more *pb.Meta) error {
-	result := dbc.DB.Where("more_id = ?", more.MoreId).Updates(more)
+	result := dbc.DB.Table("metas").Where("more_id = ?", more.MoreId).Updates(more)
 	return result.Error
 }

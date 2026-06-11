@@ -52,11 +52,11 @@ func TestCreateMoreOk(t *testing.T) {
 	// Do
 	usersMock.EXPECT().Authorize(context.Background(), &users.AuthRequest{JwtToken: jwt}).Return(&users.AuthResponse{UserId: userId}, nil)
 	mock.ExpectBegin()
-	mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO "meta" ("title","creator_id","more_id") VALUES ($1,$2,$3)`)).
+	mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO "metas" ("title","creator_id","more_id") VALUES ($1,$2,$3)`)).
 		WithArgs(title, userId, 0).
 		WillReturnResult(sqlmock.NewResult(int64(moreId), 0))
 	mock.ExpectCommit()
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "meta"`)).WillReturnRows(sqlmock.NewRows([]string{"more_id", "creator_id", "title"}).AddRow(moreId, userId, title))
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "metas"`)).WillReturnRows(sqlmock.NewRows([]string{"more_id", "creator_id", "title"}).AddRow(moreId, userId, title))
 	response, err := client.CreateMore(context.Background(), &pb.CreateRequest{Title: title, JwtToken: jwt})
 
 	// Check

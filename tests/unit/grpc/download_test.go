@@ -8,7 +8,6 @@ import (
 	"os"
 	"regexp"
 	"testing"
-	"time"
 
 	"github.com/Azat201003/summorist-mores/internal/database"
 	"github.com/Azat201003/summorist-mores/internal/server"
@@ -36,7 +35,6 @@ func TestDownload(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	go ms.Start(ctx)
 	defer cancel()
-	time.Sleep(time.Second * 1) // Wait for server start
 
 	conn, err := client.Connect()
 	assert.NoError(t, err, "Cannot estabilish connection")
@@ -46,7 +44,7 @@ func TestDownload(t *testing.T) {
 	moreId := uint64(1)
 
 	// Do
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "meta"`)).WillReturnRows(sqlmock.NewRows([]string{"more_id", "creator_id", "title"}).AddRow(moreId, 2, "title"))
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "metas"`)).WillReturnRows(sqlmock.NewRows([]string{"more_id", "creator_id", "title"}).AddRow(moreId, 2, "title"))
 	stream, err := client.DownloadMore(t.Context(), &pb.DownloadRequest{Data: &pb.ExchangeData{MoreId: moreId, BlockSize: 8}})
 	assert.NoError(t, err)
 
