@@ -44,10 +44,10 @@ func TestCreateMoreOk(t *testing.T) {
 	defer conn.Close()
 	client := pb.NewMoresClient(conn)
 
-	jwt := "some jwt"
-	moreId := uint64(2)
-	userId := uint64(3)
-	title := "Something wonderful"
+	const jwt = "some jwt"
+	const moreId uint64 = 2
+	const userId uint64 = 3
+	const title = "Something wonderful"
 
 	// Do
 	usersMock.EXPECT().Authorize(context.Background(), &users.AuthRequest{JwtToken: jwt}).Return(&users.AuthResponse{UserId: userId}, nil)

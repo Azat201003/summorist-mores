@@ -40,12 +40,9 @@ func (s *moreServer) GetFiltered(request *pb.Meta, stream grpc.ServerStreamingSe
 }
 
 func (s *moreServer) DownloadMore(request *pb.DownloadRequest, stream grpc.ServerStreamingServer[pb.Part]) error {
-	metas, err := s.DMC.RecieveFiltered(&pb.Meta{MoreId: request.Data.MoreId})
+	_, err := getMetaById(s.DMC, request.Data.MoreId)
 	if err != nil {
 		return err
-	}
-	if metas == nil {
-		return ErrNotFound
 	}
 
 	var offset uint32 = 0
@@ -78,14 +75,10 @@ func (s *moreServer) CreateMore(ctx context.Context, request *pb.CreateRequest) 
 	if err != nil {
 		return nil, err
 	}
-	mores, err := s.DMC.RecieveFiltered(&pb.Meta{MoreId: id})
-	if mores == nil {
-		return nil, ErrSomethingWentWrong
-	}
+	more, err := getMetaById(s.DMC, id)
 	if err != nil {
 		return nil, err
 	}
-	more := mores[0]
 	return more, err
 }
 
@@ -95,22 +88,12 @@ func (s *moreServer) UploadMore(stream grpc.ClientStreamingServer[pb.UploadReque
 	if header = request.GetData(); header == nil {
 		return ErrNoHeader
 	}
-	response, err := s.UsersClient.Authorize(context.Background(), &users.AuthRequest{JwtToken: header.JwtToken})
+	authedUserId, err := authorize(s.UsersClient, header.JwtToken)
 	if err != nil {
 		return err
 	}
-	if response.Code != 0 {
-		return ErrNotAuthorized
-	}
-	metas, err := s.DMC.RecieveFiltered(&pb.Meta{MoreId: header.MoreId})
-	if err != nil {
-		return err
-	}
-	if metas == nil {
-		return ErrNotFound
-	}
-	meta := metas[0]
-	if meta.CreatorId != response.UserId {
+	meta, err := getMetaById(s.DMC, header.MoreId)
+	if meta.CreatorId != authedUserId {
 		return ErrNotPermitted
 	}
 
@@ -133,9 +116,18 @@ func (s *moreServer) UploadMore(stream grpc.ClientStreamingServer[pb.UploadReque
 	return nil
 }
 
-func NewServer() (*moreServer, error) {
-	server := new(moreServer)
-	return server, nil
+func (ms *moreServer) RemoveMore(ctx context.Context, request *pb.RemoveRequest) (response *pb.Meta, err error) {
+	metas, err := ms.DMC.RecieveFiltered(&pb.Meta{MoreId: request.MoreId})
+	if err != nil {
+		return
+	}
+	if len(metas) == 0 {
+		err = ErrNotFound
+		return
+	}
+	response = metas[0]
+	err = ms.DMC.DeleteMore(request.MoreId)
+	return
 }
 
 func (ms *moreServer) Start(ctx context.Context) {
@@ -160,17 +152,27 @@ func (ms *moreServer) Start(ctx context.Context) {
 	pb.RegisterMoresServer(s, ms)
 
 	log.Printf("Server listening on %v\n", lis.Addr())
-	if err := s.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-	}
+	go func() {
+		if err := s.Serve(lis); err != nil {
+			log.Fatalf("failed to serve: %v", err)
+		}
+	}()
+
+	time.Sleep(500 * time.Millisecond)
 
 	for {
 		select {
 		case <-ctx.Done():
+			log.Println("Server stopped")
 			s.Stop()
 			return
 		default:
 			time.Sleep(500 * time.Millisecond)
 		}
 	}
+}
+
+func NewServer() (*moreServer, error) {
+	server := new(moreServer)
+	return server, nil
 }

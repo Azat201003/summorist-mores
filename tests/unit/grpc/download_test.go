@@ -41,7 +41,7 @@ func TestDownload(t *testing.T) {
 	defer conn.Close()
 	client := pb.NewMoresClient(conn)
 
-	moreId := uint64(1)
+	const moreId uint64 = 1
 
 	// Do
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "metas"`)).WillReturnRows(sqlmock.NewRows([]string{"more_id", "creator_id", "title"}).AddRow(moreId, 2, "title"))
