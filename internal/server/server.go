@@ -23,8 +23,8 @@ type moreServer struct {
 	DMC         database.DatabaseMetasClient
 }
 
-func (s *moreServer) GetFiltered(request *pb.Meta, stream grpc.ServerStreamingServer[pb.Meta]) error {
-	metas, err := s.DMC.RecieveFiltered(request)
+func (ms *moreServer) GetFiltered(request *pb.Filter, stream grpc.ServerStreamingServer[pb.Meta]) error {
+	metas, err := ms.DMC.RecieveFiltered(request)
 	if err != nil {
 		return err
 	}
@@ -39,8 +39,8 @@ func (s *moreServer) GetFiltered(request *pb.Meta, stream grpc.ServerStreamingSe
 	return nil
 }
 
-func (s *moreServer) DownloadMore(request *pb.DownloadRequest, stream grpc.ServerStreamingServer[pb.Part]) error {
-	_, err := getMetaById(s.DMC, request.Data.MoreId)
+func (ms *moreServer) DownloadMore(request *pb.DownloadRequest, stream grpc.ServerStreamingServer[pb.Part]) error {
+	_, err := getMetaById(ms.DMC, request.Data.MoreId)
 	if err != nil {
 		return err
 	}
@@ -66,34 +66,42 @@ func (s *moreServer) DownloadMore(request *pb.DownloadRequest, stream grpc.Serve
 	}
 }
 
-func (s *moreServer) CreateMore(ctx context.Context, request *pb.CreateRequest) (*pb.Meta, error) {
-	response, err := s.UsersClient.Authorize(context.Background(), &users.AuthRequest{JwtToken: request.JwtToken})
+func (ms *moreServer) CreateMore(ctx context.Context, request *pb.CreateRequest) (*pb.Meta, error) {
+	response, err := ms.UsersClient.Authorize(context.Background(), &users.AuthRequest{JwtToken: request.JwtToken})
 	if err != nil {
 		return nil, ErrNotAuthorized
 	}
-	id, err := s.DMC.CreateMore(&pb.Meta{CreatorId: response.UserId, Title: request.Title})
+	id, err := ms.DMC.CreateMore(&pb.Meta{CreatorId: response.UserId, Title: request.Title, Descripiton: request.Descripiton})
+	log.Println(id)
 	if err != nil {
 		return nil, err
 	}
-	more, err := getMetaById(s.DMC, id)
+	more, err := getMetaById(ms.DMC, id)
 	if err != nil {
 		return nil, err
 	}
+	log.Println(more)
 	return more, err
 }
 
-func (s *moreServer) UploadMore(stream grpc.ClientStreamingServer[pb.UploadRequest, pb.Meta]) error {
+func (ms *moreServer) UploadMore(stream grpc.ClientStreamingServer[pb.UploadRequest, pb.Meta]) error {
 	request, err := stream.Recv()
+	if err != nil {
+		return err
+	}
 	var header *pb.ExchangeData
 	if header = request.GetData(); header == nil {
 		return ErrNoHeader
 	}
-	authedUserId, err := authorize(s.UsersClient, header.JwtToken)
+	authedUserId, err := authorize(ms.UsersClient, header.JwtToken)
 	if err != nil {
 		return err
 	}
-	meta, err := getMetaById(s.DMC, header.MoreId)
-	if meta.CreatorId != authedUserId {
+	more, err := getMetaById(ms.DMC, header.MoreId)
+	if err != nil {
+		return err
+	}
+	if more.CreatorId != authedUserId {
 		return ErrNotPermitted
 	}
 
@@ -110,14 +118,14 @@ func (s *moreServer) UploadMore(stream grpc.ClientStreamingServer[pb.UploadReque
 			return ErrNoContent
 		}
 
-		files.WriteFile(meta.MoreId, part.Data)
+		files.WriteFile(more.MoreId, part.Data)
 	}
 
-	return nil
+	return stream.SendAndClose(more)
 }
 
 func (ms *moreServer) RemoveMore(ctx context.Context, request *pb.RemoveRequest) (response *pb.Meta, err error) {
-	metas, err := ms.DMC.RecieveFiltered(&pb.Meta{MoreId: request.MoreId})
+	metas, err := ms.DMC.RecieveFiltered(&pb.Filter{MoreId: request.MoreId})
 	if err != nil {
 		return
 	}

@@ -21,7 +21,7 @@ func TestCreateMoreOk(t *testing.T) {
 	// Prepare
 	os.Setenv("MORES_HOST", "127.0.0.1")
 	os.Setenv("MORES_PORT", "8003")
-	os.Setenv("MORES_FILE_PREFIX", "..//grpc_")
+	os.Setenv("MORES_FILE_PREFIX", "../grpc_")
 	os.Setenv("MORES_FILE_SUFFIX", ".txt")
 
 	dbc := new(database.DatabaseClient)
@@ -48,21 +48,24 @@ func TestCreateMoreOk(t *testing.T) {
 	const moreId uint64 = 2
 	const userId uint64 = 3
 	const title = "Something wonderful"
+	const description = "Read title"
 
 	// Do
 	usersMock.EXPECT().Authorize(context.Background(), &users.AuthRequest{JwtToken: jwt}).Return(&users.AuthResponse{UserId: userId}, nil)
 	mock.ExpectBegin()
-	mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO "metas" ("title","creator_id","more_id") VALUES ($1,$2,$3)`)).
-		WithArgs(title, userId, 0).
-		WillReturnResult(sqlmock.NewResult(int64(moreId), 0))
+	mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO "metas" ("title","descripiton","creator_id","more_id") VALUES ($1,$2,$3,$4)`)).
+		WithArgs(title, description, userId, 0).
+		WillReturnResult(sqlmock.NewResult(int64(moreId), 1))
 	mock.ExpectCommit()
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "metas"`)).WillReturnRows(sqlmock.NewRows([]string{"more_id", "creator_id", "title"}).AddRow(moreId, userId, title))
-	response, err := client.CreateMore(context.Background(), &pb.CreateRequest{Title: title, JwtToken: jwt})
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "metas"`)).
+		WillReturnRows(sqlmock.NewRows([]string{"more_id", "creator_id", "title", "descripiton"}).AddRow(moreId, userId, title, description))
+	response, err := client.CreateMore(context.Background(), &pb.CreateRequest{Title: title, Descripiton: description, JwtToken: jwt})
 
 	// Check
 	assert.NoError(t, err)
 	assert.Equal(t, moreId, response.MoreId)
 	assert.Equal(t, userId, response.CreatorId)
 	assert.Equal(t, title, response.Title)
+	assert.Equal(t, description, response.Descripiton)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

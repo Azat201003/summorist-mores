@@ -41,10 +41,12 @@ func TestGetFilteredOk(t *testing.T) {
 	const moreId uint64 = 1
 	const creatorId uint64 = 1
 	const title = "title"
+	const description = ""
 
 	// Do
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "metas"`)).WillReturnRows(sqlmock.NewRows([]string{"more_id", "creator_id", "title"}).AddRow(moreId, creatorId, title))
-	ans, err := client.GetFiltered(t.Context(), &pb.Meta{})
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "metas"`)).
+		WillReturnRows(sqlmock.NewRows([]string{"more_id", "creator_id", "title", "descripiton"}).AddRow(moreId, creatorId, title, description))
+	ans, err := client.GetFiltered(t.Context(), &pb.Filter{})
 
 	// Check
 	assert.NoError(t, err)
@@ -55,6 +57,7 @@ func TestGetFilteredOk(t *testing.T) {
 	assert.Equal(t, creatorId, meta.GetCreatorId())
 	assert.Equal(t, moreId, meta.GetMoreId())
 	assert.Equal(t, title, meta.GetTitle())
+	assert.Equal(t, description, meta.GetDescripiton())
 
 	assert.NoError(t, mock.ExpectationsWereMet())
 

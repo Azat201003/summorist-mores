@@ -48,10 +48,25 @@ func (dbc *DatabaseClient) GetMock() (sqlDB *sql.DB, mock sqlmock.Sqlmock, err e
 	return
 }
 
-func (dbc *DatabaseClient) RecieveFiltered(filter *pb.Meta) ([]*pb.Meta, error) {
+func (dbc *DatabaseClient) RecieveFiltered(filter *pb.Filter) ([]*pb.Meta, error) {
 	metas := []*pb.Meta{}
-	result := dbc.DB.Table("metas").Find(&metas, filter)
-	return metas, result.Error
+	var query = dbc.DB.Table("metas")
+	if filter.MoreId != 0 {
+		query = query.
+			Where("more_id = ?", filter.MoreId)
+	}
+	if filter.CreatorId != 0 {
+		query = query.
+			Where("creator_id = ?", filter.CreatorId)
+	}
+	if filter.Query != "" {
+		query = query.
+    	Select("*, ts_rank(search_vector, plainto_tsquery('simple', ?)) AS rank", filter.Query).
+    	Where("search_vector @@ plainto_tsquery('simple', ?)", filter.Query).
+    	Order("rank DESC")
+	}
+	query = query.Find(&metas)
+	return metas, query.Error
 }
 
 func (dbc *DatabaseClient) DeleteMore(id uint64) error {
