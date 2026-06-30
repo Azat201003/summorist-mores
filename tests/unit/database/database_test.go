@@ -1,6 +1,7 @@
 package database_test
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -34,9 +35,11 @@ func TestRecieveFiltered(t *testing.T) {
 	dbc, mock := setupMockDB(t)
 	defer mock.ExpectClose()
 
-	filter := &pb.Meta{MoreId: 1}
-	rows := sqlmock.NewRows([]string{"more_id"}).AddRow(1)
-	mock.ExpectQuery(`SELECT \* FROM "metas" WHERE "metas"\."more_id" = \$1`).WillReturnRows(rows)
+	filter := &pb.Filter{MoreId: 1}
+	rows := sqlmock.NewRows([]string{"more_id", "descripiton"}).AddRow(1, "")
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT *, search_vector @@ ts_query('simple', $1) AS similarity FROM "metas" WHERE similarity AND "metas"."more_id" = $2 ORDER BY similarity DESC`)).
+		WithArgs("", 1).
+		WillReturnRows(rows)
 
 	metas, err := dbc.RecieveFiltered(filter)
 	assert.NoError(t, err)

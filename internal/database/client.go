@@ -5,7 +5,7 @@ import (
 )
 
 type DatabaseMetasClient interface {
-	RecieveFiltered(filter *pb.Meta) ([]*pb.Meta, error)
+	RecieveFiltered(filter *pb.Filter) ([]*pb.Meta, error)
 	DeleteMore(id uint64) error
 	CreateMore(more *pb.Meta) (uint64, error)
 	UpdateMore(more *pb.Meta) error

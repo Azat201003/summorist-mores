@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDownload(t *testing.T) {
+func TestDownloadOk(t *testing.T) {
 	// Preparing
 	os.Setenv("MORES_HOST", "127.0.0.1")
 	os.Setenv("MORES_PORT", "8002")
@@ -44,7 +44,9 @@ func TestDownload(t *testing.T) {
 	const moreId uint64 = 1
 
 	// Do
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "metas"`)).WillReturnRows(sqlmock.NewRows([]string{"more_id", "creator_id", "title"}).AddRow(moreId, 2, "title"))
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT *, search_vector @@ ts_query('simple', $1) AS similarity FROM "metas" WHERE similarity AND "metas"."more_id" = $2 ORDER BY similarity DESC`)).
+		WithArgs("", moreId).
+		WillReturnRows(sqlmock.NewRows([]string{"more_id", "creator_id", "title", "descripiton"}).AddRow(moreId, 2, "title", ""))
 	stream, err := client.DownloadMore(t.Context(), &pb.DownloadRequest{Data: &pb.ExchangeData{MoreId: moreId, BlockSize: 8}})
 	assert.NoError(t, err)
 
@@ -64,7 +66,7 @@ func TestDownload(t *testing.T) {
 	log.Println(string(result))
 
 	// Check
-	content, err := os.ReadFile(os.Getenv("MORES_FILE_PREFIX") + fmt.Sprint(moreId) + os.Getenv("MORES_FILE_SUFFIX"))
+	content, _ := os.ReadFile(os.Getenv("MORES_FILE_PREFIX") + fmt.Sprint(moreId) + os.Getenv("MORES_FILE_SUFFIX"))
 	assert.Equal(t, content, result)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

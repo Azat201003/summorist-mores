@@ -6,7 +6,7 @@ import (
 )
 
 func getMetaById(dmc database.DatabaseMetasClient, moreId uint64) (*pb.Meta, error) {
-	metas, err := dmc.RecieveFiltered(&pb.Meta{MoreId: moreId})
+	metas, err := dmc.RecieveFiltered(&pb.Filter{MoreId: moreId})
 	if err != nil {
 		return nil, err
 	}

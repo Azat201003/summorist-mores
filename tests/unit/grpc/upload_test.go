@@ -52,25 +52,32 @@ func TestUpload(t *testing.T) {
 	const userId uint64 = 1
 	const blockSize uint32 = 5
 	const title = "title"
+	const description = ""
 
 	files.RemoveFile(moreId)
 
 	// Do
 	usersMock.EXPECT().Authorize(context.Background(), &users.AuthRequest{JwtToken: jwt}).Return(&users.AuthResponse{UserId: userId, Code: int32(0)}, nil)
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "metas"`)).WillReturnRows(sqlmock.NewRows([]string{"more_id", "creator_id", "title"}).AddRow(moreId, userId, title))
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT *, search_vector @@ ts_query('simple', $1) AS similarity FROM "metas" WHERE similarity AND "metas"."more_id" = $2 ORDER BY similarity DESC`)).
+		WithArgs("", moreId).
+		WillReturnRows(sqlmock.NewRows([]string{"more_id", "creator_id", "title", "descripiton"}).AddRow(moreId, userId, title, description))
 	stream, err := client.UploadMore(t.Context())
+	assert.NoError(t, err)
 	err = stream.Send(&pb.UploadRequest{Request: &pb.UploadRequest_Data{Data: &pb.ExchangeData{JwtToken: jwt, MoreId: moreId, BlockSize: blockSize}}})
 	assert.NoError(t, err)
 
-	data := []byte("This is super mega ultra text, that is super ultra mega, also it's text")
+	data := []byte("This is super mega ultra text, that is super ultra mega, also it's text!")
 	offset := uint32(0)
+
+	var more *pb.Meta
 
 	for {
 		err = stream.Send(&pb.UploadRequest{Request: &pb.UploadRequest_Part{Part: &pb.Part{Data: data[offset:min(offset+blockSize, uint32(len(data)))]}}})
 		offset += blockSize
+		assert.NoError(t, err)
 		if offset >= uint32(len(data)) {
 			stream.CloseSend()
-			err = stream.RecvMsg(0)
+			more, err = stream.CloseAndRecv()
 			if err == io.EOF {
 				break
 			}
@@ -84,4 +91,7 @@ func TestUpload(t *testing.T) {
 	log.Println(string(content))
 	assert.Equal(t, data, content)
 	assert.NoError(t, mock.ExpectationsWereMet())
+	assert.Equal(t, moreId, more.MoreId)
+	assert.Equal(t, title, more.Title)
+	assert.Equal(t, description, more.Descripiton)
 }

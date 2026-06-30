@@ -48,9 +48,11 @@ func (dbc *DatabaseClient) GetMock() (sqlDB *sql.DB, mock sqlmock.Sqlmock, err e
 	return
 }
 
-func (dbc *DatabaseClient) RecieveFiltered(filter *pb.Meta) ([]*pb.Meta, error) {
+func (dbc *DatabaseClient) RecieveFiltered(filter *pb.Filter) ([]*pb.Meta, error) {
 	metas := []*pb.Meta{}
-	result := dbc.DB.Table("metas").Find(&metas, filter)
+	result := dbc.DB.Table("metas").
+		Select("*, search_vector @@ ts_query('simple', ?) AS similarity", filter.Query).
+		Where("similarity").Order("similarity DESC").Where(filter).Find(&metas)
 	return metas, result.Error
 }
 
