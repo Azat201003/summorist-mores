@@ -48,8 +48,8 @@ func TestRemoveOk(t *testing.T) {
 	files.RemoveFile(moreId)
 
 	// Do
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT *, search_vector @@ ts_query('simple', $1) AS similarity FROM "metas" WHERE similarity AND "metas"."more_id" = $2 ORDER BY similarity DESC`)).
-		WithArgs("", moreId).
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "metas" WHERE more_id = $1`)).
+		WithArgs(moreId).
 		WillReturnRows(sqlmock.NewRows([]string{"more_id", "creator_id", "title", "descripiton"}).AddRow(moreId, userId, title, description))
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "metas" WHERE id = $1`)).WithArgs(moreId).WillReturnResult(sqlmock.NewResult(int64(moreId), 1))

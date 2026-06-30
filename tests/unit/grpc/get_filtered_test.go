@@ -44,8 +44,7 @@ func TestGetFilteredOk(t *testing.T) {
 	const description = ""
 
 	// Do
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT *, search_vector @@ ts_query('simple', $1) AS similarity FROM "metas" WHERE similarity ORDER BY similarity DESC`)).
-		WithArgs("").
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "metas"`)).
 		WillReturnRows(sqlmock.NewRows([]string{"more_id", "creator_id", "title", "descripiton"}).AddRow(moreId, creatorId, title, description))
 	ans, err := client.GetFiltered(t.Context(), &pb.Filter{})
 

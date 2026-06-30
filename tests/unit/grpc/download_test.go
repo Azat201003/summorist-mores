@@ -44,8 +44,8 @@ func TestDownloadOk(t *testing.T) {
 	const moreId uint64 = 1
 
 	// Do
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT *, search_vector @@ ts_query('simple', $1) AS similarity FROM "metas" WHERE similarity AND "metas"."more_id" = $2 ORDER BY similarity DESC`)).
-		WithArgs("", moreId).
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "metas" WHERE more_id = $1`)).
+		WithArgs(moreId).
 		WillReturnRows(sqlmock.NewRows([]string{"more_id", "creator_id", "title", "descripiton"}).AddRow(moreId, 2, "title", ""))
 	stream, err := client.DownloadMore(t.Context(), &pb.DownloadRequest{Data: &pb.ExchangeData{MoreId: moreId, BlockSize: 8}})
 	assert.NoError(t, err)

@@ -31,17 +31,66 @@ func setupMockDB(t *testing.T) (*database.DatabaseClient, sqlmock.Sqlmock) {
 	return dbc, mock
 }
 
-func TestRecieveFiltered(t *testing.T) {
+func TestRecieveFiltered_ByMoreId(t *testing.T) {
 	dbc, mock := setupMockDB(t)
 	defer mock.ExpectClose()
 
-	filter := &pb.Filter{MoreId: 1}
 	rows := sqlmock.NewRows([]string{"more_id", "descripiton"}).AddRow(1, "")
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT *, search_vector @@ ts_query('simple', $1) AS similarity FROM "metas" WHERE similarity AND "metas"."more_id" = $2 ORDER BY similarity DESC`)).
-		WithArgs("", 1).
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "metas" WHERE more_id = $1`)).
+		WithArgs(1).
 		WillReturnRows(rows)
 
-	metas, err := dbc.RecieveFiltered(filter)
+	metas, err := dbc.RecieveFiltered(&pb.Filter{MoreId: 1})
+	assert.NoError(t, err)
+	assert.Len(t, metas, 1)
+	assert.Equal(t, uint64(1), metas[0].MoreId)
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestRecieveFiltered_ByQuery(t *testing.T) {
+	dbc, mock := setupMockDB(t)
+	defer mock.ExpectClose()
+
+	rows := sqlmock.NewRows([]string{"more_id", "descripiton", "rank"}).AddRow(1, "", 0.5)
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT *, ts_rank(search_vector, plainto_tsquery('simple', $1)) AS rank FROM "metas" WHERE search_vector @@ plainto_tsquery('simple', $2) ORDER BY rank DESC`)).
+		WithArgs("test", "test").
+		WillReturnRows(rows)
+
+	metas, err := dbc.RecieveFiltered(&pb.Filter{Query: "test"})
+	assert.NoError(t, err)
+	assert.Len(t, metas, 1)
+	assert.Equal(t, uint64(1), metas[0].MoreId)
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestRecieveFiltered_ByMoreIdAndQuery(t *testing.T) {
+	dbc, mock := setupMockDB(t)
+	defer mock.ExpectClose()
+
+	rows := sqlmock.NewRows([]string{"more_id", "descripiton", "rank"}).AddRow(1, "", 0.5)
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT *, ts_rank(search_vector, plainto_tsquery('simple', $1)) AS rank FROM "metas" WHERE more_id = $2 AND search_vector @@ plainto_tsquery('simple', $3) ORDER BY rank DESC`)).
+		WithArgs("test", 1, "test").
+		WillReturnRows(rows)
+
+	metas, err := dbc.RecieveFiltered(&pb.Filter{MoreId: 1, Query: "test"})
+	assert.NoError(t, err)
+	assert.Len(t, metas, 1)
+	assert.Equal(t, uint64(1), metas[0].MoreId)
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestRecieveFiltered_NoFilters(t *testing.T) {
+	dbc, mock := setupMockDB(t)
+	defer mock.ExpectClose()
+
+	rows := sqlmock.NewRows([]string{"more_id", "descripiton"}).AddRow(1, "")
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "metas"`)).
+		WillReturnRows(rows)
+
+	metas, err := dbc.RecieveFiltered(&pb.Filter{})
 	assert.NoError(t, err)
 	assert.Len(t, metas, 1)
 	assert.Equal(t, uint64(1), metas[0].MoreId)
